@@ -14,8 +14,7 @@ st.set_page_config(
 st.title("🌿 KI-Pflanzenerkennung")
 
 st.write(
-    "Lade ein Bild einer Pflanze hoch. "
-    "Die KI versucht die Pflanze zu erkennen."
+    "Lade ein Bild einer Pflanze hoch."
 )
 
 # --------------------------------
@@ -26,7 +25,7 @@ def load_model():
 
     classifier = pipeline(
         "image-classification",
-        model="juppy44/plant-identification-2m-vit-b"
+        model="Sisigoks/FloraSense"
     )
 
     return classifier
@@ -60,7 +59,6 @@ if uploaded_file:
 
     st.subheader("🔍 Ergebnisse")
 
-    # Top 3 Ergebnisse
     top_results = results[:3]
 
     for i, result in enumerate(top_results):
@@ -78,6 +76,5 @@ if uploaded_file:
 # --------------------------------
 st.info(
     "Die KI kann Fehler machen. "
-    "Unscharfe oder schlechte Bilder "
-    "können zu falschen Ergebnissen führen."
+    "Besonders bei schlechten Bildern oder ähnlichen Pflanzen."
 )
