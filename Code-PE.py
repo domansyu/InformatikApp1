@@ -23,17 +23,14 @@ st.write(
 @st.cache_resource
 def load_model():
 
-    try:
-        classifier = pipeline(
-            "image-classification",
-            model="google/vit-base-patch16-224"
-        )
+    classifier = pipeline(
+        "image-classification",
+        model="nateraw/vit-base-beans"
+    )
 
-        return classifier
+    return classifier
 
-    except Exception as e:
-        st.error(f"Fehler beim Laden des Modells: {e}")
-        return None
+classifier = load_model()
 
 # --------------------------------
 # Bild hochladen
@@ -47,11 +44,6 @@ uploaded_file = st.file_uploader(
 # Pflanze erkennen
 # --------------------------------
 if uploaded_file:
-
-    classifier = load_model()
-
-    if classifier is None:
-        st.stop()
 
     image = Image.open(uploaded_file).convert("RGB")
 
@@ -67,22 +59,20 @@ if uploaded_file:
 
     st.subheader("🔍 Ergebnisse")
 
-    top_results = results[:5]
+    top_results = results[:3]
 
     for i, result in enumerate(top_results):
 
-        plant_name = result["label"]
+        label = result["label"]
         confidence = round(result["score"] * 100, 2)
 
         st.write(
-            f"{i+1}. {plant_name} "
-            f"({confidence} % Wahrscheinlichkeit)"
+            f"{i+1}. {label} ({confidence} %)"
         )
 
 # --------------------------------
 # Hinweis
 # --------------------------------
 st.info(
-    "Die KI kann Fehler machen. "
-    "Besonders bei schlechten Bildern oder ähnlichen Pflanzen."
+    "Die KI kann Fehler machen, besonders bei Wildpflanzen oder unscharfen Bildern."
 )
