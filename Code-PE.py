@@ -25,7 +25,7 @@ def load_model():
 
     classifier = pipeline(
         "image-classification",
-        model="Sisigoks/FloraSense"
+        model="google/vit-base-patch16-224"
     )
 
     return classifier
