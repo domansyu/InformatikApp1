@@ -23,14 +23,17 @@ st.write(
 @st.cache_resource
 def load_model():
 
-    classifier = pipeline(
-        "image-classification",
-        model="google/vit-base-patch16-224"
-    )
+    try:
+        classifier = pipeline(
+            "image-classification",
+            model="google/vit-base-patch16-224"
+        )
 
-    return classifier
+        return classifier
 
-classifier = load_model()
+    except Exception as e:
+        st.error(f"Fehler beim Laden des Modells: {e}")
+        return None
 
 # --------------------------------
 # Bild hochladen
@@ -44,6 +47,11 @@ uploaded_file = st.file_uploader(
 # Pflanze erkennen
 # --------------------------------
 if uploaded_file:
+
+    classifier = load_model()
+
+    if classifier is None:
+        st.stop()
 
     image = Image.open(uploaded_file).convert("RGB")
 
@@ -59,7 +67,7 @@ if uploaded_file:
 
     st.subheader("🔍 Ergebnisse")
 
-    top_results = results[:3]
+    top_results = results[:5]
 
     for i, result in enumerate(top_results):
 
