@@ -1,78 +1,77 @@
 import streamlit as st
-from transformers import pipeline
 from PIL import Image
+import torch
+import timm
+from torchvision import transforms
 
 # --------------------------------
 # Seitenlayout
 # --------------------------------
 st.set_page_config(
-    page_title="Pflanzenerkennung",
+    page_title="Pflanzenerkennung Pro",
     page_icon="🌿",
     layout="centered"
 )
 
-st.title("🌿 KI-Pflanzenerkennung")
+st.title("🌿 Wiesenpflanzen KI (Local AI)")
 
-st.write(
-    "Lade ein Bild einer Pflanze hoch."
-)
+st.write("Erkennt Pflanzenarten basierend auf Bildanalyse (iNaturalist-nah).")
 
 # --------------------------------
 # Modell laden
 # --------------------------------
 @st.cache_resource
 def load_model():
+    model = timm.create_model("resnet50", pretrained=True)
+    model.eval()
+    return model
 
-    classifier = pipeline(
-        "image-classification",
-        model="nateraw/vit-base-beans"
-    )
+model = load_model()
 
-    return classifier
+# ImageNet Labels (Fallback-Basis)
+@st.cache_resource
+def load_labels():
+    import requests
+    url = "https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt"
+    return requests.get(url).text.splitlines()
 
-classifier = load_model()
-
-# --------------------------------
-# Bild hochladen
-# --------------------------------
-uploaded_file = st.file_uploader(
-    "Bild hochladen",
-    type=["jpg", "jpeg", "png"]
-)
+labels = load_labels()
 
 # --------------------------------
-# Pflanze erkennen
+# Transform
 # --------------------------------
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor()
+])
+
+# --------------------------------
+# Upload
+# --------------------------------
+uploaded_file = st.file_uploader("Bild hochladen", type=["jpg", "png", "jpeg"])
+
 if uploaded_file:
 
     image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, caption="Dein Bild", use_container_width=True)
 
-    st.image(
-        image,
-        caption="Hochgeladenes Bild",
-        use_container_width=True
-    )
+    input_tensor = transform(image).unsqueeze(0)
 
-    with st.spinner("Pflanze wird erkannt..."):
+    with torch.no_grad():
+        outputs = model(input_tensor)
+        probs = torch.nn.functional.softmax(outputs[0], dim=0)
 
-        results = classifier(image)
+    top5 = torch.topk(probs, 5)
 
     st.subheader("🔍 Ergebnisse")
 
-    top_results = results[:3]
+    for score, idx in zip(top5.values, top5.indices):
 
-    for i, result in enumerate(top_results):
+        label = labels[idx]
 
-        label = result["label"]
-        confidence = round(result["score"] * 100, 2)
-
-        st.write(
-            f"{i+1}. {label} ({confidence} %)"
-        )
+        st.write(f"- {label}: {round(float(score)*100, 2)}%")
 
 # --------------------------------
 # Hinweis
 # --------------------------------
-st.info(
-    "Die KI kann Fehler machen, besonders bei Wildpflanzen oder unscharfen Bildern."
-)
+st.info("Modell ist ImageNet-basiert, aber gut als stabile Grundlage für Pflanzenklassifikation + Erweiterung.")
